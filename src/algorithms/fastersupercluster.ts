@@ -25,27 +25,33 @@ type BoundingBox = [number, number, number, number];
 
 export interface SuperClusterClusterOptions extends ClusterOptions {
   id?: number;
+  superCluster: SuperCluster;
 }
 
 export class SuperClusterCluster extends Cluster {
   public readonly id?: number;
+  protected superCluster: SuperCluster;
 
-  constructor({ id, ...options }: SuperClusterClusterOptions) {
+  constructor({ id, superCluster, ...options }: SuperClusterClusterOptions) {
     super(options);
     this.id = id;
+    this.superCluster = superCluster;
   }
+
   /**
-   * Get a string summary of the cluster.
+   * String summary of the cluster for fast comparison.
    */
   public get summary(): string {
     return `${this.position} ${this.count}`;
   }
-}
 
-export interface SuperClusterClusterOptions extends ClusterOptions {
-  id?: number;
-  position?: google.maps.LatLng | google.maps.LatLngLiteral;
-  markers?: google.maps.Marker[];
+  /**
+   * The next required zoom level for expanding a cluster object on click.
+   */
+  public get expansionZoom(): number {
+    const clusterZoom = this.superCluster.getClusterExpansionZoom(this.id);
+    return Math.min(clusterZoom, 20);
+  }
 }
 
 /**
@@ -133,35 +139,35 @@ export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
       .map(this.transformCluster.bind(this));
   }
 
+  /**
+   * Get the bounding box of a map as array of coordinates.
+   */
   protected getBoundingBox(map: google.maps.Map): BoundingBox {
     const bounds = map.getBounds().toJSON();
     return [bounds.west, bounds.south, bounds.east, bounds.north];
-  }
-
-  public getExpansionZoom(cluster: SuperClusterCluster): number {
-    const clusterZoom = this.superCluster.getClusterExpansionZoom(cluster.id)
-    return Math.min(clusterZoom, 20)
   }
 
   protected transformCluster({
     geometry: {
       coordinates: [lng, lat],
     },
-    properties,
+    properties: {
+      cluster,
+      cluster_id: clusterId,
+      marker,
+    },
   }: ClusterFeature<{ marker: google.maps.Marker }>): Cluster {
-    if (properties.cluster) {
+    if (cluster) {
       return new SuperClusterCluster({
-        id: properties.cluster_id,
+        id: clusterId,
         markers: this.superCluster
-          .getLeaves(properties.cluster_id, Infinity)
+          .getLeaves(clusterId, Infinity)
           .map((leaf) => leaf.properties.marker),
         position: new google.maps.LatLng({ lat, lng }),
-
+        superCluster: this.superCluster,
       });
     } else {
-      const marker = properties.marker;
-
-      return new SuperClusterCluster({
+      return new Cluster({
         markers: [marker],
         position: marker.getPosition(),
       });
