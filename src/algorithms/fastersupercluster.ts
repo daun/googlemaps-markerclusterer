@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import { AbstractAlgorithm, AlgorithmInput, AlgorithmOutput } from "./core";
-import { SuperClusterOptions } from "./supercluster";
+import { deepEqual, shallowEqual } from "fast-equals";
 import SuperCluster, { ClusterFeature } from "supercluster";
 
+import { AbstractAlgorithm, AlgorithmInput, AlgorithmOutput } from "./core";
 import { Cluster, ClusterOptions } from "../cluster";
-import { deepEqual, shallowEqual } from "fast-equals";
+import { SuperClusterOptions } from "./supercluster";
+import { extendBoundsToPaddedViewport } from "./utils";
 
 type BoundingBox = [number, number, number, number];
 
@@ -54,6 +55,10 @@ export class SuperClusterCluster extends Cluster {
   }
 }
 
+interface FasterSuperClusterOptions extends SuperClusterOptions {
+  viewportPadding?: number;
+}
+
 /**
  * A very fast JavaScript algorithm for geospatial point clustering using KD trees.
  *
@@ -64,9 +69,12 @@ export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
   protected markers: google.maps.Marker[];
   protected clusters: SuperClusterCluster[];
   protected state: { zoom: number, boundingBox: BoundingBox };
+  protected viewportPadding = 0;
 
-  constructor({ maxZoom, radius = 60, ...options }: SuperClusterOptions) {
+  constructor({ maxZoom, radius = 60, viewportPadding = 0, ...options }: FasterSuperClusterOptions) {
     super({ maxZoom });
+
+    this.viewportPadding = viewportPadding;
 
     this.superCluster = new SuperCluster({
       maxZoom: this.maxZoom,
@@ -133,18 +141,23 @@ export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
     return { clusters: this.clusters, changed };
   }
 
-  public cluster({ map }: AlgorithmInput): SuperClusterCluster[] {
+  public cluster({ map, mapCanvasProjection }: AlgorithmInput): SuperClusterCluster[] {
     return this.superCluster
-      .getClusters(this.getBoundingBox(map), Math.round(map.getZoom()))
+      .getClusters(this.getBoundingBox(map, mapCanvasProjection), Math.round(map.getZoom()))
       .map(this.transformCluster.bind(this));
   }
 
   /**
    * Get the bounding box of a map as array of coordinates.
    */
-  protected getBoundingBox(map: google.maps.Map): BoundingBox {
-    const bounds = map.getBounds().toJSON();
-    return [bounds.west, bounds.south, bounds.east, bounds.north];
+  protected getBoundingBox(map: google.maps.Map, mapCanvasProjection: google.maps.MapCanvasProjection): BoundingBox {
+    let bounds = map.getBounds();
+    if (this.viewportPadding > 0) {
+      bounds = extendBoundsToPaddedViewport(bounds, mapCanvasProjection, this.viewportPadding);
+    }
+
+    const box = bounds.toJSON();
+    return [box.west, box.south, box.east, box.north];
   }
 
   protected transformCluster({
