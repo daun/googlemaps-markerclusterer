@@ -117,7 +117,7 @@ export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
 
     const state = {
       zoom: input.map.getZoom(),
-      boundingBox: this.getBoundingBox(input.map),
+      boundingBox: this.getBoundingBox(input),
     };
 
     if (!changed) {
@@ -146,25 +146,19 @@ export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
     return { clusters: this.clusters, changed };
   }
 
-  public cluster({
-    map,
-    mapCanvasProjection,
-  }: AlgorithmInput): SuperClusterCluster[] {
+  public cluster(input: AlgorithmInput): SuperClusterCluster[] {
     return this.superCluster
-      .getClusters(
-        this.getBoundingBox(map, mapCanvasProjection),
-        Math.round(map.getZoom())
-      )
+      .getClusters(this.getBoundingBox(input), Math.round(input.map.getZoom()))
       .map(this.transformCluster.bind(this));
   }
 
   /**
    * Get the bounding box of a map as array of coordinates.
    */
-  protected getBoundingBox(
-    map: google.maps.Map,
-    mapCanvasProjection: google.maps.MapCanvasProjection
-  ): BoundingBox {
+  protected getBoundingBox({
+    map,
+    mapCanvasProjection,
+  }: AlgorithmInput): BoundingBox {
     let bounds = map.getBounds();
     if (this.viewportPadding > 0) {
       bounds = extendBoundsToPaddedViewport(
