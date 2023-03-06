@@ -15,16 +15,19 @@
  */
 
 export interface ClusterOptions {
+  id?: number;
   position?: google.maps.LatLng | google.maps.LatLngLiteral;
   markers?: google.maps.Marker[];
 }
 
 export class Cluster {
+  public readonly id?: number;
   public marker: google.maps.Marker;
   public readonly markers?: google.maps.Marker[];
   protected _position: google.maps.LatLng;
 
-  constructor({ markers, position }: ClusterOptions) {
+  constructor({ id, markers, position }: ClusterOptions) {
+    this.id = id;
     this.markers = markers;
 
     if (position) {
@@ -56,6 +59,13 @@ export class Cluster {
   public get count(): number {
     return this.markers.filter((m: google.maps.Marker) => m.getVisible())
       .length;
+  }
+
+  /**
+   * Get a string summary of the cluster.
+   */
+  public get summary(): string {
+    return `${this.position} ${this.count}`;
   }
 
   /**
