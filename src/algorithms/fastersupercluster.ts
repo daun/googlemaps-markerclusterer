@@ -18,11 +18,35 @@ import { AbstractAlgorithm, AlgorithmInput, AlgorithmOutput } from "./core";
 import { SuperClusterOptions } from "./supercluster";
 import SuperCluster, { ClusterFeature } from "supercluster";
 
-import { Cluster } from "../cluster";
-import equal from "fast-deep-equal";
+import { Cluster, ClusterOptions } from "../cluster";
 import { deepEqual, shallowEqual } from "fast-equals";
 
 type BoundingBox = [number, number, number, number];
+
+export interface SuperClusterClusterOptions extends ClusterOptions {
+  id?: number;
+}
+
+export class SuperClusterCluster extends Cluster {
+  public readonly id?: number;
+
+  constructor({ id, ...options }: SuperClusterClusterOptions) {
+    super(options);
+    this.id = id;
+  }
+  /**
+   * Get a string summary of the cluster.
+   */
+  public get summary(): string {
+    return `${this.position} ${this.count}`;
+  }
+}
+
+export interface SuperClusterClusterOptions extends ClusterOptions {
+  id?: number;
+  position?: google.maps.LatLng | google.maps.LatLngLiteral;
+  markers?: google.maps.Marker[];
+}
 
 /**
  * A very fast JavaScript algorithm for geospatial point clustering using KD trees.
@@ -32,7 +56,7 @@ type BoundingBox = [number, number, number, number];
 export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
   protected superCluster: SuperCluster;
   protected markers: google.maps.Marker[];
-  protected clusters: Cluster[];
+  protected clusters: SuperClusterCluster[];
   protected state: { zoom: number, boundingBox: BoundingBox };
 
   constructor({ maxZoom, radius = 60, ...options }: SuperClusterOptions) {
@@ -103,7 +127,7 @@ export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
     return { clusters: this.clusters, changed };
   }
 
-  public cluster({ map }: AlgorithmInput): Cluster[] {
+  public cluster({ map }: AlgorithmInput): SuperClusterCluster[] {
     return this.superCluster
       .getClusters(this.getBoundingBox(map), Math.round(map.getZoom()))
       .map(this.transformCluster.bind(this));
@@ -114,7 +138,7 @@ export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
     return [bounds.west, bounds.south, bounds.east, bounds.north];
   }
 
-  protected getExpansionZoom(cluster: Cluster): number {
+  public getExpansionZoom(cluster: SuperClusterCluster): number {
     const clusterZoom = this.superCluster.getClusterExpansionZoom(cluster.id)
     return Math.min(clusterZoom, 20)
   }
@@ -126,17 +150,18 @@ export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
     properties,
   }: ClusterFeature<{ marker: google.maps.Marker }>): Cluster {
     if (properties.cluster) {
-      return new Cluster({
+      return new SuperClusterCluster({
         id: properties.cluster_id,
         markers: this.superCluster
           .getLeaves(properties.cluster_id, Infinity)
           .map((leaf) => leaf.properties.marker),
         position: new google.maps.LatLng({ lat, lng }),
+
       });
     } else {
       const marker = properties.marker;
 
-      return new Cluster({
+      return new SuperClusterCluster({
         markers: [marker],
         position: marker.getPosition(),
       });
