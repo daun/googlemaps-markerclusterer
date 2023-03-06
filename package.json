@@ -1,23 +1,22 @@
 {
-  "name": "@googlemaps/markerclusterer",
-  "version": "2.0.15",
-  "description": "Creates and manages per-zoom-level clusters for large amounts of markers.",
+  "name": "@daun/markerclusterer",
+  "version": "2.0.16",
+  "description": "Fork of Google's marker clusterer with performance improvements",
   "keywords": [
     "cluster",
     "google",
     "maps",
     "marker"
   ],
-  "homepage": "https://github.com/googlemaps/js-markerclusterer",
+  "homepage": "https://github.com/daun/googlemaps-markerclusterer",
   "bugs": {
-    "url": "https://github.com/googlemaps/js-markerclusterer/issues"
+    "url": "https://github.com/daun/googlemaps-markerclusterer/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/googlemaps/js-markerclusterer.git"
+    "url": "https://github.com/daun/googlemaps-markerclusterer.git"
   },
   "license": "Apache-2.0",
-  "author": "Justin Poehnelt",
   "main": "dist/index.umd.js",
   "unpkg": "dist/index.min.js",
   "module": "dist/index.esm.js",
@@ -74,7 +73,6 @@
     "typescript": "^4.0.2"
   },
   "publishConfig": {
-    "access": "public",
-    "registry": "https://wombat-dressing-room.appspot.com"
+    "access": "public"
   }
 }
