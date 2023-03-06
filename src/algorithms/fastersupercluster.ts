@@ -68,10 +68,15 @@ export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
   protected superCluster: SuperCluster;
   protected markers: google.maps.Marker[];
   protected clusters: SuperClusterCluster[];
-  protected state: { zoom: number, boundingBox: BoundingBox };
+  protected state: { zoom: number; boundingBox: BoundingBox };
   protected viewportPadding = 0;
 
-  constructor({ maxZoom, radius = 60, viewportPadding = 0, ...options }: FasterSuperClusterOptions) {
+  constructor({
+    maxZoom,
+    radius = 60,
+    viewportPadding = 0,
+    ...options
+  }: FasterSuperClusterOptions) {
     super({ maxZoom });
 
     this.viewportPadding = viewportPadding;
@@ -112,7 +117,7 @@ export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
 
     const state = {
       zoom: input.map.getZoom(),
-      boundingBox: this.getBoundingBox(input.map)
+      boundingBox: this.getBoundingBox(input.map),
     };
 
     if (!changed) {
@@ -141,19 +146,32 @@ export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
     return { clusters: this.clusters, changed };
   }
 
-  public cluster({ map, mapCanvasProjection }: AlgorithmInput): SuperClusterCluster[] {
+  public cluster({
+    map,
+    mapCanvasProjection,
+  }: AlgorithmInput): SuperClusterCluster[] {
     return this.superCluster
-      .getClusters(this.getBoundingBox(map, mapCanvasProjection), Math.round(map.getZoom()))
+      .getClusters(
+        this.getBoundingBox(map, mapCanvasProjection),
+        Math.round(map.getZoom())
+      )
       .map(this.transformCluster.bind(this));
   }
 
   /**
    * Get the bounding box of a map as array of coordinates.
    */
-  protected getBoundingBox(map: google.maps.Map, mapCanvasProjection: google.maps.MapCanvasProjection): BoundingBox {
+  protected getBoundingBox(
+    map: google.maps.Map,
+    mapCanvasProjection: google.maps.MapCanvasProjection
+  ): BoundingBox {
     let bounds = map.getBounds();
     if (this.viewportPadding > 0) {
-      bounds = extendBoundsToPaddedViewport(bounds, mapCanvasProjection, this.viewportPadding);
+      bounds = extendBoundsToPaddedViewport(
+        bounds,
+        mapCanvasProjection,
+        this.viewportPadding
+      );
     }
 
     const box = bounds.toJSON();
@@ -164,11 +182,7 @@ export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
     geometry: {
       coordinates: [lng, lat],
     },
-    properties: {
-      cluster,
-      cluster_id: clusterId,
-      marker,
-    },
+    properties: { cluster, cluster_id: clusterId, marker },
   }: ClusterFeature<{ marker: google.maps.Marker }>): Cluster {
     if (cluster) {
       return new SuperClusterCluster({
