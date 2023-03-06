@@ -62,6 +62,13 @@ export class Cluster {
   }
 
   /**
+   * Get a string summary of the cluster.
+   */
+  public get summary(): string {
+    return `${this.position} ${this.count}`;
+  }
+
+  /**
    * Add a marker to the cluster.
    */
   public push(marker: google.maps.Marker): void {
