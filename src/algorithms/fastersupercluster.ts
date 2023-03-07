@@ -26,11 +26,13 @@ type BoundingBox = [number, number, number, number];
 
 export interface SuperClusterClusterOptions extends ClusterOptions {
   id?: number;
+  properties?: object;
   superCluster: SuperCluster;
 }
 
 export class SuperClusterCluster extends Cluster {
   public readonly id?: number;
+  public properties?: object;
   protected superCluster: SuperCluster;
 
   constructor({ id, superCluster, ...options }: SuperClusterClusterOptions) {
@@ -173,10 +175,8 @@ export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
   }
 
   protected transformCluster({
-    geometry: {
-      coordinates: [lng, lat],
-    },
-    properties: { cluster, cluster_id: clusterId, marker },
+    geometry: { coordinates: [lng, lat] },
+    properties: { cluster, cluster_id: clusterId, marker, ...otherProperties },
   }: ClusterFeature<{ marker: google.maps.Marker }>): Cluster {
     if (cluster) {
       return new SuperClusterCluster({
@@ -185,6 +185,7 @@ export class FasterSuperClusterAlgorithm extends AbstractAlgorithm {
           .getLeaves(clusterId, Infinity)
           .map((leaf) => leaf.properties.marker),
         position: new google.maps.LatLng({ lat, lng }),
+        properties: otherProperties,
         superCluster: this.superCluster,
       });
     } else {
