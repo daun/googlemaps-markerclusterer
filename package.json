@@ -1,6 +1,6 @@
 {
   "name": "@daun/markerclusterer",
-  "version": "2.0.16",
+  "version": "2.0.17",
   "description": "Fork of Google's marker clusterer with performance improvements",
   "keywords": [
     "cluster",
